@@ -39,7 +39,7 @@ export default function LeadForm({
   useEffect(() => {
     if (envoye) {
       setMontrerConfetti(true)
-      const timer = setTimeout(() => setMontrerConfetti(false), 4000)
+      const timer = setTimeout(() => setMontrerConfetti(false), 7000)
       return () => clearTimeout(timer)
     }
   }, [envoye])
@@ -154,18 +154,29 @@ export default function LeadForm({
       />
 
       <div>
-        <input
-          type="tel"
-          required
-          placeholder="Numéro WhatsApp"
-          value={whatsapp}
-          onChange={(e) => setWhatsapp(e.target.value)}
-          className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
-        />
-        {indicatif && (
-          <p className="text-xs text-gray-500 mt-1">
-            Indicatif +{indicatif} appliqué automatiquement — inutile de le retaper.
-          </p>
+        {indicatif ? (
+          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg overflow-hidden focus-within:border-gray-600">
+            <span className="px-3 py-2 text-gray-400 bg-gray-800/60 border-r border-gray-800 select-none">
+              +{indicatif}
+            </span>
+            <input
+              type="tel"
+              required
+              placeholder="Numéro WhatsApp"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="flex-1 bg-transparent px-3 py-2 outline-none min-w-0"
+            />
+          </div>
+        ) : (
+          <input
+            type="tel"
+            required
+            placeholder="Numéro WhatsApp"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+          />
         )}
       </div>
 

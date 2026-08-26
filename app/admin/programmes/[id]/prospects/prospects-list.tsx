@@ -10,6 +10,7 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [confirmSuppressionId, setConfirmSuppressionId] = useState<string | null>(null)
   const [filtre, setFiltre] = useState<'tous' | 'confirmes' | 'non_confirmes'>('tous')
+  const [recherche, setRecherche] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -19,7 +20,6 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
         .from('prospects')
         .select('*')
         .eq('programme_id', programmeId)
-        .order('created_at', { ascending: false })
       setProspects((data as Prospect[]) ?? [])
       setLoading(false)
     }
@@ -31,7 +31,7 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'prospects', filter: `programme_id=eq.${programmeId}` },
         (payload) => {
-          setProspects((prev) => [payload.new as Prospect, ...prev])
+          setProspects((prev) => [...prev, payload.new as Prospect])
         }
       )
       .subscribe()
@@ -61,11 +61,14 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
     setTimeout(() => setCopiedId(null), 1500)
   }
 
-  const prospectsFiltres = prospects.filter((p) => {
-    if (filtre === 'confirmes') return p.confirme
-    if (filtre === 'non_confirmes') return !p.confirme
-    return true
-  })
+  const prospectsFiltres = prospects
+    .filter((p) => {
+      if (filtre === 'confirmes') return p.confirme
+      if (filtre === 'non_confirmes') return !p.confirme
+      return true
+    })
+    .filter((p) => p.nom.toLowerCase().includes(recherche.toLowerCase()))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }))
 
   const nbConfirmes = prospects.filter((p) => p.confirme).length
 
@@ -76,6 +79,14 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
           {loading ? 'Chargement...' : `${prospects.length} inscrit${prospects.length > 1 ? 's' : ''} · ${nbConfirmes} confirmé${nbConfirmes > 1 ? 's' : ''}`}
         </p>
       </div>
+
+      <input
+        type="text"
+        placeholder="Rechercher un nom..."
+        value={recherche}
+        onChange={(e) => setRecherche(e.target.value)}
+        className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 mb-4"
+      />
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <button onClick={() => setFiltre('tous')} className={`shrink-0 text-xs rounded-full px-3 py-1.5 border transition ${filtre === 'tous' ? 'bg-white text-black border-white' : 'border-gray-800 text-gray-400 hover:border-gray-600'}`}>
@@ -90,7 +101,7 @@ export default function ProspectsList({ programmeId }: { programmeId: string }) 
       </div>
 
       {!loading && prospectsFiltres.length === 0 && (
-        <p className="text-gray-600 text-sm">Aucun prospect dans cette catégorie.</p>
+        <p className="text-gray-600 text-sm">Aucun prospect trouvé.</p>
       )}
 
       <div className="space-y-2">

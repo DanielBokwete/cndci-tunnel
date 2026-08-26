@@ -6,11 +6,11 @@ const COULEURS = ['#1666f0', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#fffff
 
 export default function Confetti() {
   const particules = useMemo(() => {
-    return Array.from({ length: 60 }).map((_, i) => ({
+    return Array.from({ length: 70 }).map((_, i) => ({
       id: i,
       gauche: Math.random() * 100,
-      delai: Math.random() * 0.6,
-      duree: 2.2 + Math.random() * 1.4,
+      delai: Math.random() * 2,
+      duree: 2.5 + Math.random() * 1.5,
       taille: 6 + Math.random() * 6,
       couleur: COULEURS[Math.floor(Math.random() * COULEURS.length)],
       arrondi: Math.random() > 0.5,
@@ -30,7 +30,7 @@ export default function Confetti() {
             height: p.taille,
             backgroundColor: p.couleur,
             borderRadius: p.arrondi ? '50%' : '2px',
-            animation: `confetti-fall ${p.duree}s ease-in ${p.delai}s forwards`,
+            animation: `confetti-fall ${p.duree}s linear ${p.delai}s infinite`,
           }}
         />
       ))}
