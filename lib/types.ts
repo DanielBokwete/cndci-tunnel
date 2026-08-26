@@ -22,6 +22,9 @@ export type Programme = {
   heure_debut: string | null
   heure_fin: string | null
   lieu: string | null
+  pays: string | null
+  indicatif: string | null
+  ville: string | null
   prix: number | null
   prix_original: number | null
   frais_inscription: number | null

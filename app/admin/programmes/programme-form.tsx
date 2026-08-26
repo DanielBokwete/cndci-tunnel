@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Secteur, Programme, Vacation } from '@/lib/types'
+import { PAYS_FRANCOPHONES } from '@/lib/pays-francophones'
 
 const styleInputFichier =
   "w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-white/20 file:bg-gray-900 file:text-white file:font-semibold file:cursor-pointer hover:file:border-white/40 hover:file:bg-gray-800 transition"
@@ -49,6 +50,8 @@ export default function ProgrammeForm({
     date_fin: programme?.date_fin ?? '',
     heure_debut: programme?.heure_debut ?? '',
     heure_fin: programme?.heure_fin ?? '',
+    pays: programme?.pays ?? '',
+    ville: programme?.ville ?? '',
     lieu: programme?.lieu ?? '',
     prix: programme?.prix?.toString() ?? '',
     prix_original: programme?.prix_original?.toString() ?? '',
@@ -132,6 +135,8 @@ export default function ProgrammeForm({
         image_affiche_url = await uploadImage(imageAfficheFile)
       }
 
+      const paysChoisi = PAYS_FRANCOPHONES.find((p) => p.nom === form.pays)
+
       const payload = {
         titre: form.titre,
         slug: form.slug || genererSlug(form.titre),
@@ -143,6 +148,9 @@ export default function ProgrammeForm({
         date_fin: form.date_fin || null,
         heure_debut: form.type !== 'formation' ? (form.heure_debut || null) : null,
         heure_fin: form.type !== 'formation' ? (form.heure_fin || null) : null,
+        pays: form.pays || null,
+        indicatif: paysChoisi?.indicatif ?? null,
+        ville: form.ville || null,
         lieu: form.lieu || null,
         prix: form.prix ? parseFloat(form.prix) : null,
         prix_original: form.prix_original ? parseFloat(form.prix_original) : null,
@@ -369,10 +377,43 @@ export default function ProgrammeForm({
         </div>
       )}
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Pays</label>
+          <select
+            required
+            value={form.pays}
+            onChange={(e) => setForm({ ...form, pays: e.target.value })}
+            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+          >
+            <option value="">Choisis un pays</option>
+            {PAYS_FRANCOPHONES.map((p) => (
+              <option key={p.nom} value={p.nom}>{p.nom} (+{p.indicatif})</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Ville</label>
+          <input
+            type="text"
+            required
+            placeholder="ex: Kinshasa"
+            value={form.ville}
+            onChange={(e) => setForm({ ...form, ville: e.target.value })}
+            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+          />
+        </div>
+      </div>
+      <p className="text-xs text-gray-600 -mt-3">
+        Le pays choisi détermine automatiquement l&apos;indicatif téléphonique appliqué aux numéros
+        WhatsApp enregistrés pour ce programme (ex : RDC → +243).
+      </p>
+
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Lieu</label>
+        <label className="block text-sm text-gray-400 mb-1">Adresse précise (optionnel)</label>
         <input
           type="text"
+          placeholder="ex: 63, avenue Colonel Mondjiba, Silikin Village"
           value={form.lieu}
           onChange={(e) => setForm({ ...form, lieu: e.target.value })}
           className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
