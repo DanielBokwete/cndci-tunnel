@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Secteur, Programme } from '@/lib/types'
+import type { Secteur, Programme, Vacation } from '@/lib/types'
 import ProgrammeForm from '../programme-form'
 import DeleteButton from './delete-button'
 
@@ -28,6 +28,12 @@ export default async function EditerProgrammePage({
     .select('*')
     .order('nom') as { data: Secteur[] | null }
 
+  const { data: vacations } = await supabase
+    .from('vacations')
+    .select('*')
+    .eq('programme_id', id)
+    .order('ordre') as { data: Vacation[] | null }
+
   return (
     <main className="min-h-screen bg-[#070c18] text-white px-6 py-10">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -48,7 +54,7 @@ export default async function EditerProgrammePage({
           </Link>
         </div>
 
-        <ProgrammeForm secteurs={secteurs ?? []} programme={programme} />
+        <ProgrammeForm secteurs={secteurs ?? []} programme={programme} vacationsInitiales={vacations ?? []} />
       </div>
     </main>
   )

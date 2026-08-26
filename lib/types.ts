@@ -36,9 +36,21 @@ export type ProgrammeAvecSecteur = Programme & {
   secteur: Secteur | null
 }
 
+export type Vacation = {
+  id: string
+  programme_id: string
+  nom: string | null
+  heure_debut: string
+  heure_fin: string
+  ordre: number
+  created_at: string
+}
+
 export type Prospect = {
   id: string
   programme_id: string
+  vacation_id: string | null
+  vacation_secondaire_id: string | null
   nom: string
   whatsapp: string
   email: string | null

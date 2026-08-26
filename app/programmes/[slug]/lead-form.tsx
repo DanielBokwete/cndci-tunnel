@@ -1,27 +1,45 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Programme } from '@/lib/types'
+import type { Programme, Vacation } from '@/lib/types'
+import Confetti from './confetti'
 
 export default function LeadForm({
   programmeId,
   lienInscription,
   programmesSimilaires,
+  vacations,
 }: {
   programmeId: string
   lienInscription: string | null
   programmesSimilaires: Programme[]
+  vacations: Vacation[]
 }) {
   const [nom, setNom] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [email, setEmail] = useState('')
   const [genre, setGenre] = useState('')
   const [age, setAge] = useState('')
+  const [vacationId, setVacationId] = useState('')
+  const [vacationSecondaireId, setVacationSecondaireId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [envoye, setEnvoye] = useState(false)
+  const [montrerConfetti, setMontrerConfetti] = useState(false)
+
+  function libelleVacation(v: Vacation) {
+    return `${v.nom ? `${v.nom} — ` : ''}${v.heure_debut.slice(0, 5)} à ${v.heure_fin.slice(0, 5)}`
+  }
+
+  useEffect(() => {
+    if (envoye) {
+      setMontrerConfetti(true)
+      const timer = setTimeout(() => setMontrerConfetti(false), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [envoye])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,6 +49,8 @@ export default function LeadForm({
     const supabase = createClient()
     const { error: insertError } = await supabase.from('prospects').insert({
       programme_id: programmeId,
+      vacation_id: vacationId || null,
+      vacation_secondaire_id: vacationSecondaireId || null,
       nom,
       whatsapp,
       email: email || null,
@@ -51,6 +71,7 @@ export default function LeadForm({
   if (envoye) {
     return (
       <div id="reservation" className="space-y-8">
+        {montrerConfetti && <Confetti />}
         <div className="border border-green-800 bg-green-950/30 rounded-2xl p-6 text-center">
           <p className="text-green-400 font-semibold mb-2">
             Merci {nom.split(' ')[0]} ! Tes informations ont bien été enregistrées.
@@ -102,6 +123,8 @@ export default function LeadForm({
       </div>
     )
   }
+
+  const vacationsSecondaires = vacations.filter((v) => v.id !== vacationId)
 
   return (
     <form id="reservation" onSubmit={handleSubmit} className="border border-gray-800 rounded-2xl p-6 space-y-4">
@@ -165,6 +188,49 @@ export default function LeadForm({
           className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
         />
       </div>
+
+      {vacations.length > 0 && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Vacation souhaitée</label>
+            <select
+              required
+              value={vacationId}
+              onChange={(e) => {
+                setVacationId(e.target.value)
+                if (e.target.value === vacationSecondaireId) setVacationSecondaireId('')
+              }}
+              className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 text-gray-300"
+            >
+              <option value="">Choisis ta vacation</option>
+              {vacations.map((v) => (
+                <option key={v.id} value={v.id}>{libelleVacation(v)}</option>
+              ))}
+            </select>
+          </div>
+
+          {vacationId && vacationsSecondaires.length > 0 && (
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Deuxième choix</label>
+              <select
+                required
+                value={vacationSecondaireId}
+                onChange={(e) => setVacationSecondaireId(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 text-gray-300"
+              >
+                <option value="">Choisis ton deuxième choix</option>
+                {vacationsSecondaires.map((v) => (
+                  <option key={v.id} value={v.id}>{libelleVacation(v)}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Le nombre de places par vacation est limité. Ce second choix nous permet de te
+                confirmer une place rapidement si ta vacation préférée est déjà complète.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <button
         type="submit"

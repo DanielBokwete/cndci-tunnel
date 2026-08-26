@@ -3,17 +3,21 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Secteur, Programme } from '@/lib/types'
+import type { Secteur, Programme, Vacation } from '@/lib/types'
 
 const styleInputFichier =
   "w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-white/20 file:bg-gray-900 file:text-white file:font-semibold file:cursor-pointer hover:file:border-white/40 hover:file:bg-gray-800 transition"
 
+type VacationForm = { id?: string; nom: string; heure_debut: string; heure_fin: string }
+
 export default function ProgrammeForm({
   secteurs,
   programme,
+  vacationsInitiales,
 }: {
   secteurs: Secteur[]
   programme?: Programme
+  vacationsInitiales?: Vacation[]
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -24,6 +28,15 @@ export default function ProgrammeForm({
   const [previewHeader, setPreviewHeader] = useState<string | null>(programme?.image_header_url ?? null)
   const [previewCard, setPreviewCard] = useState<string | null>(programme?.image_card_url ?? null)
   const [previewAffiche, setPreviewAffiche] = useState<string | null>(programme?.image_affiche_url ?? null)
+
+  const [vacations, setVacations] = useState<VacationForm[]>(
+    vacationsInitiales?.map((v) => ({
+      id: v.id,
+      nom: v.nom ?? '',
+      heure_debut: v.heure_debut.slice(0, 5),
+      heure_fin: v.heure_fin.slice(0, 5),
+    })) ?? []
+  )
 
   const [form, setForm] = useState({
     titre: programme?.titre ?? '',
@@ -71,6 +84,18 @@ export default function ProgrammeForm({
     if (file) setPreviewAffiche(URL.createObjectURL(file))
   }
 
+  function ajouterVacation() {
+    setVacations([...vacations, { nom: '', heure_debut: '', heure_fin: '' }])
+  }
+
+  function retirerVacation(index: number) {
+    setVacations(vacations.filter((_, i) => i !== index))
+  }
+
+  function modifierVacation(index: number, champ: 'nom' | 'heure_debut' | 'heure_fin', valeur: string) {
+    setVacations(vacations.map((v, i) => (i === index ? { ...v, [champ]: valeur } : v)))
+  }
+
   async function uploadImage(file: File): Promise<string> {
     const supabase = createClient()
     const ext = file.name.split('.').pop()
@@ -116,8 +141,8 @@ export default function ProgrammeForm({
         contenu: form.contenu || null,
         date_debut: form.date_debut || null,
         date_fin: form.date_fin || null,
-        heure_debut: form.heure_debut || null,
-        heure_fin: form.heure_fin || null,
+        heure_debut: form.type !== 'formation' ? (form.heure_debut || null) : null,
+        heure_fin: form.type !== 'formation' ? (form.heure_fin || null) : null,
         lieu: form.lieu || null,
         prix: form.prix ? parseFloat(form.prix) : null,
         prix_original: form.prix_original ? parseFloat(form.prix_original) : null,
@@ -129,6 +154,8 @@ export default function ProgrammeForm({
         image_affiche_url,
       }
 
+      let programmeId = programme?.id
+
       if (programme) {
         const { error: updateError } = await supabase
           .from('programmes')
@@ -136,10 +163,33 @@ export default function ProgrammeForm({
           .eq('id', programme.id)
         if (updateError) throw updateError
       } else {
-        const { error: insertError } = await supabase
+        const { data: nouveauProgramme, error: insertError } = await supabase
           .from('programmes')
           .insert({ ...payload, promo_start_at: new Date().toISOString() })
+          .select()
+          .single()
         if (insertError) throw insertError
+        programmeId = nouveauProgramme.id
+      }
+
+      if (programmeId) {
+        await supabase.from('vacations').delete().eq('programme_id', programmeId)
+
+        if (form.type === 'formation' && vacations.length > 0) {
+          const vacationsValides = vacations.filter((v) => v.heure_debut && v.heure_fin)
+          if (vacationsValides.length > 0) {
+            const { error: vacationsError } = await supabase.from('vacations').insert(
+              vacationsValides.map((v, i) => ({
+                programme_id: programmeId,
+                nom: v.nom || null,
+                heure_debut: v.heure_debut,
+                heure_fin: v.heure_fin,
+                ordre: i,
+              }))
+            )
+            if (vacationsError) throw vacationsError
+          }
+        }
       }
 
       router.push('/admin')
@@ -237,29 +287,87 @@ export default function ProgrammeForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Heure de début</label>
-          <input
-            type="time"
-            value={form.heure_debut}
-            onChange={(e) => setForm({ ...form, heure_debut: e.target.value })}
-            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
-          />
+      {form.type !== 'formation' && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Heure de début</label>
+              <input
+                type="time"
+                value={form.heure_debut}
+                onChange={(e) => setForm({ ...form, heure_debut: e.target.value })}
+                className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Heure de fin</label>
+              <input
+                type="time"
+                value={form.heure_fin}
+                onChange={(e) => setForm({ ...form, heure_fin: e.target.value })}
+                className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-600 -mt-3">
+            Précise l&apos;heure exacte de début et fin de la masterclass.
+          </p>
+        </>
+      )}
+
+      {form.type === 'formation' && (
+        <div className="border border-white/10 rounded-xl p-4 space-y-3">
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-1">Vacations</label>
+            <p className="text-xs text-gray-600">
+              Ajoute un ou plusieurs créneaux horaires parmi lesquels la personne pourra choisir
+              lors de son inscription (ex : &quot;Matinée&quot; 9h-12h, &quot;Après-midi&quot; 14h-17h).
+            </p>
+          </div>
+
+          {vacations.map((v, index) => (
+            <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="text"
+                placeholder="Nom (ex: Matinée)"
+                value={v.nom}
+                onChange={(e) => modifierVacation(index, 'nom', e.target.value)}
+                className="sm:w-40 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+              />
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="time"
+                  value={v.heure_debut}
+                  onChange={(e) => modifierVacation(index, 'heure_debut', e.target.value)}
+                  className="flex-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+                />
+                <span className="text-gray-600">à</span>
+                <input
+                  type="time"
+                  value={v.heure_fin}
+                  onChange={(e) => modifierVacation(index, 'heure_fin', e.target.value)}
+                  className="flex-1 bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => retirerVacation(index)}
+                  className="text-red-500 hover:text-red-400 text-sm px-2 shrink-0"
+                >
+                  Retirer
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={ajouterVacation}
+            className="text-sm border border-white/20 rounded-lg px-3 py-1.5 hover:bg-white/10 transition"
+          >
+            + Ajouter une vacation
+          </button>
         </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Heure de fin</label>
-          <input
-            type="time"
-            value={form.heure_fin}
-            onChange={(e) => setForm({ ...form, heure_fin: e.target.value })}
-            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
-          />
-        </div>
-      </div>
-      <p className="text-xs text-gray-600 -mt-3">
-        Utile surtout pour les masterclass (une seule journée) — précise l&apos;heure exacte de début et fin.
-      </p>
+      )}
 
       <div>
         <label className="block text-sm text-gray-400 mb-1">Lieu</label>

@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { ProgrammeAvecSecteur, Programme } from '@/lib/types'
-import CountdownTimer from './countdown-timer'
+import type { ProgrammeAvecSecteur, Programme, Vacation } from '@/lib/types'
+import OffreBar from './offre-bar'
 import LeadForm from './lead-form'
-import PrixDisplay from './prix-display'
 import MinimalHeader from '../../_components/minimal-header'
 import SiteFooter from '../../_components/site-footer'
 
@@ -34,6 +33,12 @@ export default async function ProgrammePage({
     .neq('id', programme.id)
     .limit(3) as { data: Programme[] | null }
 
+  const { data: vacations } = await supabase
+    .from('vacations')
+    .select('*')
+    .eq('programme_id', programme.id)
+    .order('ordre') as { data: Vacation[] | null }
+
   const formatDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null
 
@@ -49,10 +54,21 @@ export default async function ProgrammePage({
     heureDebutFmt && heureFinFmt ? `${heureDebutFmt} - ${heureFinFmt}` :
     heureDebutFmt ? heureDebutFmt : null
 
+  let joursRestants: number | null = null
+  if (programme.date_debut) {
+    const aujourdhui = new Date()
+    aujourdhui.setHours(0, 0, 0, 0)
+    const debut = new Date(programme.date_debut)
+    debut.setHours(0, 0, 0, 0)
+    const diff = Math.round((debut.getTime() - aujourdhui.getTime()) / (1000 * 60 * 60 * 24))
+    if (diff >= 0) joursRestants = diff
+  }
+
   return (
     <main className="min-h-screen bg-[#070c18] text-white">
       <div className="relative h-[45vh] min-h-[320px] w-full overflow-hidden">
         <MinimalHeader />
+
         {programme.image_header_url ? (
           <img
             src={programme.image_header_url}
@@ -92,10 +108,41 @@ export default async function ProgrammePage({
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
-        <CountdownTimer />
+      {joursRestants !== null && (
+        <div className="fixed top-3 right-3 z-50">
+          {programme.image_affiche_url ? (
+            <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg shadow-black/50">
+              <img
+                src={programme.image_affiche_url}
+                alt=""
+                className="w-full h-full object-cover blur-[1px]"
+              />
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <span className="text-red-500 font-extrabold text-sm animate-pulse drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                  {joursRestants === 0 ? "Aujourd'hui" : `J-${joursRestants}`}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-black/70 backdrop-blur border border-white/20 rounded-full px-4 py-2 text-xs font-bold shadow-lg shadow-black/50">
+              <span className="text-red-500 animate-pulse">
+                {joursRestants === 0 ? "Débute aujourd'hui" : `Début dans ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+        {programme.prix != null && (
+          <OffreBar
+            prix={programme.prix}
+            prixOriginal={programme.prix_original}
+            fraisInscription={programme.frais_inscription}
+          />
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {programme.type === 'masterclass' ? (
             programme.date_debut && (
               <div className="border border-white/10 rounded-xl p-4">
@@ -112,18 +159,12 @@ export default async function ProgrammePage({
                 <div className="border border-white/10 rounded-xl p-4">
                   <p className="text-xs text-gray-500 uppercase mb-1">Début</p>
                   <p className="font-semibold">{formatDate(programme.date_debut)}</p>
-                  {heureDebutFmt && (
-                    <p className="text-sm text-gray-400">{heureDebutFmt}</p>
-                  )}
                 </div>
               )}
               {programme.date_fin && (
                 <div className="border border-white/10 rounded-xl p-4">
                   <p className="text-xs text-gray-500 uppercase mb-1">Fin</p>
                   <p className="font-semibold">{formatDate(programme.date_fin)}</p>
-                  {heureFinFmt && (
-                    <p className="text-sm text-gray-400">{heureFinFmt}</p>
-                  )}
                 </div>
               )}
             </>
@@ -133,13 +174,6 @@ export default async function ProgrammePage({
               <p className="text-xs text-gray-500 uppercase mb-1">Lieu</p>
               <p className="font-semibold">{programme.lieu}</p>
             </div>
-          )}
-          {programme.prix != null && (
-            <PrixDisplay
-              prix={programme.prix}
-              prixOriginal={programme.prix_original}
-              fraisInscription={programme.frais_inscription}
-            />
           )}
         </div>
 
@@ -167,6 +201,7 @@ export default async function ProgrammePage({
           programmeId={programme.id}
           lienInscription={programme.lien_inscription}
           programmesSimilaires={programmesSimilaires ?? []}
+          vacations={vacations ?? []}
         />
       </div>
 
