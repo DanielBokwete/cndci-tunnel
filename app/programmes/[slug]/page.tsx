@@ -54,6 +54,8 @@ export default async function ProgrammePage({
     heureDebutFmt && heureFinFmt ? `${heureDebutFmt} - ${heureFinFmt}` :
     heureDebutFmt ? heureDebutFmt : null
 
+  const lieuAffiche = [programme.ville, programme.pays].filter(Boolean).join(', ')
+
   let joursRestants: number | null = null
   if (programme.date_debut) {
     const aujourdhui = new Date()
@@ -169,10 +171,13 @@ export default async function ProgrammePage({
               )}
             </>
           )}
-          {programme.lieu && (
+          {lieuAffiche && (
             <div className="border border-white/10 rounded-xl p-4">
               <p className="text-xs text-gray-500 uppercase mb-1">Lieu</p>
-              <p className="font-semibold">{programme.lieu}</p>
+              <p className="font-semibold">{lieuAffiche}</p>
+              {programme.lieu && (
+                <p className="text-sm text-gray-400">{programme.lieu}</p>
+              )}
             </div>
           )}
         </div>
@@ -202,6 +207,7 @@ export default async function ProgrammePage({
           lienInscription={programme.lien_inscription}
           programmesSimilaires={programmesSimilaires ?? []}
           vacations={vacations ?? []}
+          indicatif={programme.indicatif}
         />
       </div>
 

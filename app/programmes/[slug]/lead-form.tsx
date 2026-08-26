@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Programme, Vacation } from '@/lib/types'
+import { formaterNumeroInternational } from '@/lib/pays-francophones'
 import Confetti from './confetti'
 
 export default function LeadForm({
@@ -11,11 +12,13 @@ export default function LeadForm({
   lienInscription,
   programmesSimilaires,
   vacations,
+  indicatif,
 }: {
   programmeId: string
   lienInscription: string | null
   programmesSimilaires: Programme[]
   vacations: Vacation[]
+  indicatif: string | null
 }) {
   const [nom, setNom] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -46,13 +49,15 @@ export default function LeadForm({
     setError('')
     setLoading(true)
 
+    const numeroFormate = indicatif ? formaterNumeroInternational(whatsapp, indicatif) : whatsapp
+
     const supabase = createClient()
     const { error: insertError } = await supabase.from('prospects').insert({
       programme_id: programmeId,
       vacation_id: vacationId || null,
       vacation_secondaire_id: vacationSecondaireId || null,
       nom,
-      whatsapp,
+      whatsapp: numeroFormate,
       email: email || null,
       genre,
       age: parseInt(age, 10),
@@ -148,14 +153,21 @@ export default function LeadForm({
         className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
       />
 
-      <input
-        type="tel"
-        required
-        placeholder="Numéro WhatsApp"
-        value={whatsapp}
-        onChange={(e) => setWhatsapp(e.target.value)}
-        className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
-      />
+      <div>
+        <input
+          type="tel"
+          required
+          placeholder="Numéro WhatsApp"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+        />
+        {indicatif && (
+          <p className="text-xs text-gray-500 mt-1">
+            Indicatif +{indicatif} appliqué automatiquement — inutile de le retaper.
+          </p>
+        )}
+      </div>
 
       <input
         type="email"
