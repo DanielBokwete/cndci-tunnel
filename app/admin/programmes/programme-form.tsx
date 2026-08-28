@@ -62,6 +62,7 @@ export default function ProgrammeForm({
     description: programme?.description ?? '',
     contenu: programme?.contenu ?? '',
     public_cible: programme?.public_cible ?? '',
+        titre_video: programme?.titre_video ?? '',
     afficher_certification: programme?.afficher_certification ?? true,
     date_debut: programme?.date_debut ?? '',
     date_fin: programme?.date_fin ?? '',
@@ -167,6 +168,7 @@ export default function ProgrammeForm({
         description: form.description || null,
         contenu: form.contenu || null,
         public_cible: form.public_cible || null,
+                titre_video: form.titre_video || null,
         afficher_certification: form.afficher_certification,
         date_debut: form.date_debut || null,
         date_fin: form.date_fin || null,
@@ -471,6 +473,18 @@ export default function ProgrammeForm({
         <div>
           <label className="block text-sm font-semibold text-gray-300 mb-1">Témoignages / Preuves sociales</label>
           <p className="text-xs text-gray-600">Ajoute des captures d&apos;écran ou des liens vidéo (YouTube, TikTok...) de témoignages clients.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Titre de la section vidéo (optionnel)</label>
+          <input
+            type="text"
+            placeholder="ex: Découvre le programme en vidéo"
+            value={form.titre_video}
+            onChange={(e) => setForm({ ...form, titre_video: e.target.value })}
+            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+          />
+          <p className="text-xs text-gray-600 mt-1">Affiché au-dessus des vidéos ajoutées ci-dessous, si tu en as au moins une. Laisse vide pour n&apos;afficher aucun titre.</p>
         </div>
         {temoignages.map((t, i) => (
           <div key={i} className="border border-white/10 rounded-lg p-3 space-y-2">

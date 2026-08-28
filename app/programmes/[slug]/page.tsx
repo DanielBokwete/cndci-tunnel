@@ -4,6 +4,8 @@ import type { ProgrammeAvecSecteur, Programme, Vacation, Faq, Temoignage, Interv
 import OffreBar from './offre-bar'
 import LeadForm from './lead-form'
 import TemoignageVideo from './temoignage-video'
+import BadgeOffre from './badge-offre'
+import BoutonReserver from './bouton-reserver'
 import MinimalHeader from '../../_components/minimal-header'
 import SiteFooter from '../../_components/site-footer'
 
@@ -38,10 +40,13 @@ export default async function ProgrammePage({
     .from('vacations').select('*').eq('programme_id', programme.id).order('ordre') as { data: Vacation[] | null }
   const { data: faqs } = await supabase
     .from('faqs').select('*').eq('programme_id', programme.id).order('ordre') as { data: Faq[] | null }
-  const { data: temoignages } = await supabase
+  const { data: temoignagesBruts } = await supabase
     .from('temoignages').select('*').eq('programme_id', programme.id).order('ordre') as { data: Temoignage[] | null }
   const { data: intervenants } = await supabase
     .from('intervenants').select('*').eq('programme_id', programme.id).order('ordre') as { data: Intervenant[] | null }
+
+  const videos = (temoignagesBruts ?? []).filter((t) => t.type === 'video')
+  const captures = (temoignagesBruts ?? []).filter((t) => t.type === 'image')
 
   const formatDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null
@@ -58,6 +63,11 @@ export default async function ProgrammePage({
     heureDebutFmt ? heureDebutFmt : null
 
   const lieuAffiche = [programme.ville, programme.pays].filter(Boolean).join(', ')
+
+  const reduction =
+    programme.prix != null && programme.prix_original && programme.prix_original > programme.prix
+      ? Math.round(((programme.prix_original - programme.prix) / programme.prix_original) * 100)
+      : null
 
   let joursRestants: number | null = null
   if (programme.date_debut) {
@@ -98,24 +108,7 @@ export default async function ProgrammePage({
       </div>
 
       {joursRestants !== null && (
-        <div className="fixed top-3 right-3 z-50">
-          {programme.image_affiche_url ? (
-            <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg shadow-black/50">
-              <img src={programme.image_affiche_url} alt="" className="w-full h-full object-cover blur-[1px]" />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <span className="text-red-500 font-extrabold text-sm animate-pulse drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                  {joursRestants === 0 ? "Aujourd'hui" : `J-${joursRestants}`}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-black/70 backdrop-blur border border-white/20 rounded-full px-4 py-2 text-xs font-bold shadow-lg shadow-black/50">
-              <span className="text-red-500 animate-pulse">
-                {joursRestants === 0 ? "Débute aujourd'hui" : `Début dans ${joursRestants} jour${joursRestants > 1 ? 's' : ''}`}
-              </span>
-            </div>
-          )}
-        </div>
+        <BadgeOffre joursRestants={joursRestants} imageAfficheUrl={programme.image_affiche_url} reduction={reduction} />
       )}
 
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
@@ -156,6 +149,25 @@ export default async function ProgrammePage({
             </div>
           )}
         </div>
+
+        {videos.length > 0 && (
+          <div>
+            {programme.titre_video && (
+              <h2 className="text-xl font-bold mb-4">{programme.titre_video}</h2>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {videos.map((t) => (
+                <div key={t.id}>
+                  <TemoignageVideo url={t.url} />
+                  {t.nom && <p className="text-sm text-gray-500 mt-2">{t.nom}</p>}
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-center">
+              <BoutonReserver />
+            </div>
+          </div>
+        )}
 
         {programme.contenu && (
           <div className={programme.image_affiche_url ? 'grid grid-cols-1 md:grid-cols-3 gap-8' : ''}>
@@ -214,17 +226,13 @@ export default async function ProgrammePage({
           </div>
         )}
 
-        {temoignages && temoignages.length > 0 && (
+        {captures.length > 0 && (
           <div>
             <h2 className="text-xl font-bold mb-4">Ils en parlent</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {temoignages.map((t) => (
+              {captures.map((t) => (
                 <div key={t.id}>
-                  {t.type === 'video' ? (
-                    <TemoignageVideo url={t.url} />
-                  ) : (
-                    <img src={t.url} alt={t.nom ?? 'Témoignage'} className="w-full rounded-xl border border-white/10 object-cover" />
-                  )}
+                  <img src={t.url} alt={t.nom ?? 'Témoignage'} className="w-full rounded-xl border border-white/10 object-cover" />
                   {t.nom && <p className="text-sm text-gray-500 mt-2">{t.nom}</p>}
                 </div>
               ))}

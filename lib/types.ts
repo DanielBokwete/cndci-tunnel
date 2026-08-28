@@ -45,6 +45,7 @@ export type Programme = {
   lien_inscription: string | null
   afficher_certification: boolean
   public_cible: string | null
+  titre_video: string | null
   promo_start_at: string
   actif: boolean
   created_at: string
