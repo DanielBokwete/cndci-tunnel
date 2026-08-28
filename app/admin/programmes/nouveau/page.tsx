@@ -1,12 +1,21 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getOrganisationCourante } from '@/lib/organisation'
 import type { Secteur } from '@/lib/types'
 import ProgrammeForm from '../programme-form'
 
 export default async function NouveauProgrammePage() {
   const supabase = await createClient()
+  const organisation = await getOrganisationCourante(supabase)
+
+  if (!organisation) {
+    redirect('/inscription')
+  }
+
   const { data: secteurs } = await supabase
     .from('secteurs')
     .select('*')
+    .eq('organisation_id', organisation.id)
     .order('nom') as { data: Secteur[] | null }
 
   return (

@@ -1,5 +1,18 @@
+export type Organisation = {
+  id: string
+  nom: string
+  sous_domaine: string
+  proprietaire_id: string
+  plan: 'essai' | 'actif' | 'expire' | 'annule'
+  essai_fin: string
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  created_at: string
+}
+
 export type Secteur = {
   id: string
+  organisation_id: string
   nom: string
   slug: string
   couleur: string
@@ -8,6 +21,7 @@ export type Secteur = {
 
 export type Programme = {
   id: string
+  organisation_id: string
   secteur_id: string | null
   titre: string
   slug: string
@@ -29,6 +43,8 @@ export type Programme = {
   prix_original: number | null
   frais_inscription: number | null
   lien_inscription: string | null
+  afficher_certification: boolean
+  public_cible: string | null
   promo_start_at: string
   actif: boolean
   created_at: string
@@ -45,6 +61,35 @@ export type Vacation = {
   nom: string | null
   heure_debut: string
   heure_fin: string
+  ordre: number
+  created_at: string
+}
+
+export type Faq = {
+  id: string
+  programme_id: string
+  question: string
+  reponse: string
+  ordre: number
+  created_at: string
+}
+
+export type Temoignage = {
+  id: string
+  programme_id: string
+  type: 'image' | 'video'
+  url: string
+  nom: string | null
+  ordre: number
+  created_at: string
+}
+
+export type Intervenant = {
+  id: string
+  programme_id: string
+  nom: string
+  bio: string | null
+  photo_url: string | null
   ordre: number
   created_at: string
 }
