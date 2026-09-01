@@ -14,6 +14,22 @@ type FaqForm = { id?: string; question: string; reponse: string }
 type TemoignageForm = { id?: string; type: 'image' | 'video'; url: string; nom: string; file?: File; preview?: string }
 type IntervenantForm = { id?: string; nom: string; bio: string; photo_url?: string; file?: File; preview?: string }
 
+function extraireMessageErreur(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object') {
+    const objet = err as Record<string, unknown>
+    if (typeof objet.message === 'string') return objet.message
+    if (typeof objet.error_description === 'string') return objet.error_description
+    if (typeof objet.details === 'string') return objet.details
+    try {
+      return JSON.stringify(err)
+    } catch {
+      return 'Une erreur est survenue.'
+    }
+  }
+  return 'Une erreur est survenue.'
+}
+
 export default function ProgrammeForm({
   secteurs,
   programme,
@@ -62,7 +78,7 @@ export default function ProgrammeForm({
     description: programme?.description ?? '',
     contenu: programme?.contenu ?? '',
     public_cible: programme?.public_cible ?? '',
-        titre_video: programme?.titre_video ?? '',
+    titre_video: programme?.titre_video ?? '',
     afficher_certification: programme?.afficher_certification ?? true,
     date_debut: programme?.date_debut ?? '',
     date_fin: programme?.date_fin ?? '',
@@ -168,7 +184,7 @@ export default function ProgrammeForm({
         description: form.description || null,
         contenu: form.contenu || null,
         public_cible: form.public_cible || null,
-                titre_video: form.titre_video || null,
+        titre_video: form.titre_video || null,
         afficher_certification: form.afficher_certification,
         date_debut: form.date_debut || null,
         date_fin: form.date_fin || null,
@@ -201,27 +217,26 @@ export default function ProgrammeForm({
       }
 
       if (programmeId) {
-        // Vacations
         await supabase.from('vacations').delete().eq('programme_id', programmeId)
         if (form.type === 'formation' && vacations.length > 0) {
           const valides = vacations.filter((v) => v.heure_debut && v.heure_fin)
           if (valides.length > 0) {
-            await supabase.from('vacations').insert(
+            const { error: vErr } = await supabase.from('vacations').insert(
               valides.map((v, i) => ({ programme_id: programmeId, nom: v.nom || null, heure_debut: v.heure_debut, heure_fin: v.heure_fin, ordre: i }))
             )
+            if (vErr) throw vErr
           }
         }
 
-        // FAQ
         await supabase.from('faqs').delete().eq('programme_id', programmeId)
         const faqsValides = faqs.filter((f) => f.question && f.reponse)
         if (faqsValides.length > 0) {
-          await supabase.from('faqs').insert(
+          const { error: fErr } = await supabase.from('faqs').insert(
             faqsValides.map((f, i) => ({ programme_id: programmeId, question: f.question, reponse: f.reponse, ordre: i }))
           )
+          if (fErr) throw fErr
         }
 
-        // Temoignages (upload des nouveaux fichiers image d'abord)
         await supabase.from('temoignages').delete().eq('programme_id', programmeId)
         const temoignagesAvecUrl = await Promise.all(
           temoignages.map(async (t) => {
@@ -234,12 +249,12 @@ export default function ProgrammeForm({
         )
         const temoignagesValides = temoignagesAvecUrl.filter((t) => t.url)
         if (temoignagesValides.length > 0) {
-          await supabase.from('temoignages').insert(
+          const { error: tErr } = await supabase.from('temoignages').insert(
             temoignagesValides.map((t, i) => ({ programme_id: programmeId, type: t.type, url: t.url, nom: t.nom || null, ordre: i }))
           )
+          if (tErr) throw tErr
         }
 
-        // Intervenants (upload des nouvelles photos d'abord)
         await supabase.from('intervenants').delete().eq('programme_id', programmeId)
         const intervenantsAvecUrl = await Promise.all(
           intervenants.map(async (it) => {
@@ -252,16 +267,17 @@ export default function ProgrammeForm({
         )
         const intervenantsValides = intervenantsAvecUrl.filter((it) => it.nom)
         if (intervenantsValides.length > 0) {
-          await supabase.from('intervenants').insert(
+          const { error: iErr } = await supabase.from('intervenants').insert(
             intervenantsValides.map((it, i) => ({ programme_id: programmeId, nom: it.nom, bio: it.bio || null, photo_url: it.photo_url, ordre: i }))
           )
+          if (iErr) throw iErr
         }
       }
 
       router.push('/admin')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.')
+      setError(extraireMessageErreur(err))
       setLoading(false)
     }
   }
@@ -486,6 +502,7 @@ export default function ProgrammeForm({
           />
           <p className="text-xs text-gray-600 mt-1">Affiché au-dessus des vidéos ajoutées ci-dessous, si tu en as au moins une. Laisse vide pour n&apos;afficher aucun titre.</p>
         </div>
+
         {temoignages.map((t, i) => (
           <div key={i} className="border border-white/10 rounded-lg p-3 space-y-2">
             <div className="flex gap-2">

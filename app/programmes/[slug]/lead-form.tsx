@@ -66,7 +66,7 @@ export default function LeadForm({
     setLoading(false)
 
     if (insertError) {
-      setError('Une erreur est survenue, réessaie.')
+      setError('Une erreur est survenue, réessaie. Si le problème persiste, rafraîchis la page.')
       return
     }
 
