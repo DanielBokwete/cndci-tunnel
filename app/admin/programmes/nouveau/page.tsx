@@ -22,7 +22,7 @@ export default async function NouveauProgrammePage() {
     <main className="min-h-screen bg-[#070c18] text-white px-6 py-10">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-8">Nouveau programme</h1>
-        <ProgrammeForm secteurs={secteurs ?? []} />
+        <ProgrammeForm secteurs={secteurs ?? []} organisationId={organisation.id} />
       </div>
     </main>
   )

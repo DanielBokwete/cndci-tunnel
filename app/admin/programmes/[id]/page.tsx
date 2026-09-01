@@ -56,6 +56,7 @@ export default async function EditerProgrammePage({
         <ProgrammeForm
           secteurs={secteurs ?? []}
           programme={programme}
+          organisationId={programme.organisation_id}
           vacationsInitiales={vacations ?? []}
           faqsInitiales={faqs ?? []}
           temoignagesInitiaux={temoignages ?? []}

@@ -33,6 +33,7 @@ function extraireMessageErreur(err: unknown): string {
 export default function ProgrammeForm({
   secteurs,
   programme,
+  organisationId,
   vacationsInitiales,
   faqsInitiales,
   temoignagesInitiaux,
@@ -40,6 +41,7 @@ export default function ProgrammeForm({
 }: {
   secteurs: Secteur[]
   programme?: Programme
+  organisationId: string
   vacationsInitiales?: Vacation[]
   faqsInitiales?: Faq[]
   temoignagesInitiaux?: Temoignage[]
@@ -177,6 +179,7 @@ export default function ProgrammeForm({
       const paysChoisi = PAYS_FRANCOPHONES.find((p) => p.nom === form.pays)
 
       const payload = {
+        organisation_id: organisationId,
         titre: form.titre,
         slug: form.slug || genererSlug(form.titre),
         secteur_id: form.secteur_id || null,
