@@ -1,11 +1,16 @@
+import Image from 'next/image'
+
 export default function SiteFooter() {
   return (
-    <footer id="contact" className="border-t border-white/10 bg-[#070c18]">
+    <footer id="contact" className="border-t border-white/10">
       <div className="max-w-5xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
         <div>
-          <p className="font-extrabold text-lg mb-2">
-            CND<span className="text-[#1666f0]">CI</span>
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <Image src="/logo-cndci.png" alt="CNDCI" width={28} height={28} />
+            <p className="font-extrabold text-lg">
+              CND<span className="text-[#1666f0]">CI</span>
+            </p>
+          </div>
           <p className="text-sm text-gray-500 leading-relaxed">
             Centre Numérique de Développement des Compétences Informatiques —
             le centre de formation du Groupe Elako, fondé par Michel Elako en février 2021.
@@ -21,7 +26,7 @@ export default function SiteFooter() {
         <div>
           <p className="text-sm font-semibold text-gray-300 mb-3">Contact</p>
           <p className="text-sm text-gray-500">
-            WhatsApp : <a href="https://wa.me/243825367992" target="_blank" rel="noopener noreferrer" className="text-[#1666f0] hover:underline">+243 825 367 992</a>
+            WhatsApp : <a href="https://wa.me/243988165397" target="_blank" rel="noopener noreferrer" className="text-[#1666f0] hover:underline">+243 988 165 397</a>
           </p>
           <p className="text-sm text-gray-500 mt-1">
             Email : <span className="text-gray-400">contact@facileapp.org</span>

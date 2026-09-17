@@ -28,3 +28,30 @@ body {
     opacity: 0.9;
   }
 }
+
+@keyframes bulle1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, 90px) scale(1.15); }
+  66% { transform: translate(-40px, 40px) scale(0.9); }
+}
+
+@keyframes bulle2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-70px, 50px) scale(0.85); }
+  66% { transform: translate(50px, -60px) scale(1.2); }
+}
+
+@keyframes bulle3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -80px) scale(1.1); }
+}
+
+.animate-bulle1 {
+  animation: bulle1 22s ease-in-out infinite;
+}
+.animate-bulle2 {
+  animation: bulle2 27s ease-in-out infinite;
+}
+.animate-bulle3 {
+  animation: bulle3 19s ease-in-out infinite;
+}

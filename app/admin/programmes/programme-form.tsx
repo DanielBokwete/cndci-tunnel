@@ -138,7 +138,11 @@ export default function ProgrammeForm({
     if (!file) return
     setTemoignages(temoignages.map((t, idx) => (idx === i ? { ...t, file, preview: URL.createObjectURL(file) } : t)))
   }
-
+  function handleTemoignageVideoFichier(i: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    if (!file) return
+    setTemoignages(temoignages.map((t, idx) => (idx === i ? { ...t, file, url: '' } : t)))
+  }
   function ajouterIntervenant() { setIntervenants([...intervenants, { nom: '', bio: '' }]) }
   function retirerIntervenant(i: number) { setIntervenants(intervenants.filter((_, idx) => idx !== i)) }
   function modifierIntervenant(i: number, champ: 'nom' | 'bio', v: string) {
@@ -244,7 +248,7 @@ export default function ProgrammeForm({
         const temoignagesAvecUrl = await Promise.all(
           temoignages.map(async (t) => {
             let url = t.url
-            if (t.type === 'image' && t.file) {
+            if (t.file) {
               url = await uploadImage(t.file)
             }
             return { ...t, url }
@@ -523,8 +527,14 @@ export default function ProgrammeForm({
                 <input type="file" accept="image/*" onChange={(e) => handleTemoignageFichier(i, e)} className={styleInputFichier} />
               </>
             ) : (
-              <input type="text" placeholder="Lien de la vidéo (YouTube, TikTok...)" value={t.url} onChange={(e) => modifierTemoignage(i, 'url', e.target.value)}
-                className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+              <>
+                <input type="file" accept="video/*" onChange={(e) => handleTemoignageVideoFichier(i, e)} className={styleInputFichier} />
+                <p className="text-xs text-gray-600">Taille maximale : 20 Mo. Compresse la vidéo si besoin avant de l&apos;importer.</p>
+                {t.file && <p className="text-xs text-green-400">Fichier sélectionné : {t.file.name}</p>}
+                <p className="text-xs text-gray-600">Ou colle un lien à la place (YouTube, TikTok, Instagram) :</p>
+                <input type="text" placeholder="https://..." value={t.url} onChange={(e) => modifierTemoignage(i, 'url', e.target.value)}
+                  className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+              </>
             )}
             <button type="button" onClick={() => retirerTemoignage(i)} className="text-red-500 hover:text-red-400 text-sm">Retirer ce témoignage</button>
           </div>

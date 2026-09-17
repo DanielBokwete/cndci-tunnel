@@ -19,14 +19,17 @@ export default function OffreBar({
   prix,
   prixOriginal,
   fraisInscription,
+  accent,
 }: {
   prix: number
   prixOriginal: number | null
   fraisInscription: number | null
+  accent: string
 }) {
-  const [temps, setTemps] = useState(() => calculerTempsRestant())
+  const [temps, setTemps] = useState<{ heures: number; minutes: number; secondes: number } | null>(null)
 
   useEffect(() => {
+    setTemps(calculerTempsRestant())
     const interval = setInterval(() => {
       setTemps(calculerTempsRestant())
     }, 1000)
@@ -70,14 +73,18 @@ export default function OffreBar({
             Offre expire dans
           </span>
           <div className="flex items-center gap-1 font-mono text-xl font-bold text-white">
-            <span className="bg-red-900/60 rounded-lg px-2 py-1">{pad(temps.heures)}</span>
+            <span className="bg-red-900/60 rounded-lg px-2 py-1">{temps ? pad(temps.heures) : '--'}</span>
             <span className="text-red-400">:</span>
-            <span className="bg-red-900/60 rounded-lg px-2 py-1">{pad(temps.minutes)}</span>
+            <span className="bg-red-900/60 rounded-lg px-2 py-1">{temps ? pad(temps.minutes) : '--'}</span>
             <span className="text-red-400">:</span>
-            <span className="bg-red-900/60 rounded-lg px-2 py-1">{pad(temps.secondes)}</span>
+            <span className="bg-red-900/60 rounded-lg px-2 py-1">{temps ? pad(temps.secondes) : '--'}</span>
           </div>
         </div>
-        <button onClick={allerAuFormulaire} className="bg-[#1666f0] hover:bg-[#1256cc] text-white font-bold rounded-xl px-6 py-3 transition text-center w-full sm:w-auto">
+        <button
+          onClick={allerAuFormulaire}
+          style={{ backgroundColor: accent }}
+          className="text-white font-bold rounded-xl px-6 py-3 transition text-center w-full sm:w-auto hover:brightness-90"
+        >
           Profiter de l&apos;offre maintenant
         </button>
       </div>

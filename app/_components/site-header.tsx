@@ -16,7 +16,7 @@ export default function SiteHeader() {
           <Link href="/#apropos" className="hover:text-white transition">Présentation</Link>
           <Link href="/#contact" className="hover:text-white transition">Contact</Link>
         </nav>
-        <a href="https://wa.me/243825367992" target="_blank" rel="noopener noreferrer" className="text-sm bg-[#1666f0] hover:bg-[#1256cc] text-white font-semibold rounded-full px-4 py-2 transition">
+        <a href="https://wa.me/243988165397" target="_blank" rel="noopener noreferrer" className="text-sm bg-[#1666f0] hover:bg-[#1256cc] text-white font-semibold rounded-full px-4 py-2 transition">
           Nous contacter
         </a>
       </div>

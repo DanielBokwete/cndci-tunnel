@@ -6,6 +6,7 @@ import LeadForm from './lead-form'
 import TemoignageVideo from './temoignage-video'
 import BadgeOffre from './badge-offre'
 import BoutonReserver from './bouton-reserver'
+import FondAnime from './fond-anime'
 import MinimalHeader from '../../_components/minimal-header'
 import SiteFooter from '../../_components/site-footer'
 
@@ -64,6 +65,11 @@ export default async function ProgrammePage({
 
   const lieuAffiche = [programme.ville, programme.pays].filter(Boolean).join(', ')
 
+  const accent = programme.secteur?.couleur ?? '#1666f0'
+  const estSkiller = (programme.secteur?.nom ?? '').toUpperCase().includes('KILLER')
+  const fondCouleur = estSkiller ? '#050608' : '#070c18'
+  const fondPage = estSkiller ? undefined : { backgroundColor: fondCouleur }
+
   const reduction =
     programme.prix != null && programme.prix_original && programme.prix_original > programme.prix
       ? Math.round(((programme.prix_original - programme.prix) / programme.prix_original) * 100)
@@ -80,16 +86,22 @@ export default async function ProgrammePage({
   }
 
   return (
-    <main className="min-h-screen bg-[#070c18] text-white">
-      <div className="relative h-[45vh] min-h-[320px] w-full overflow-hidden">
+    <main className="min-h-screen text-white" style={fondPage}>
+      {estSkiller && <FondAnime />}
+      <div className="relative z-10 h-[45vh] min-h-[320px] w-full overflow-hidden">
         <MinimalHeader />
 
         {programme.image_header_url ? (
           <img src={programme.image_header_url} alt={programme.titre} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${programme.secteur?.couleur ?? '#1666f0'}, #070c18)` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${programme.secteur?.couleur ?? '#1666f0'}, ${fondCouleur})` }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070c18] via-[#070c18]/40 to-black/10" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to top, ${fondCouleur} 0%, ${fondCouleur}f0 30%, ${fondCouleur}99 55%, ${fondCouleur}33 80%, transparent 100%)`,
+          }}
+        />
 
         <div className="relative h-full flex flex-col justify-end max-w-4xl mx-auto px-6 pb-10">
           <div className="flex items-center gap-2 mb-4">
@@ -111,9 +123,9 @@ export default async function ProgrammePage({
         <BadgeOffre joursRestants={joursRestants} imageAfficheUrl={programme.image_affiche_url} reduction={reduction} />
       )}
 
-      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-10 space-y-10">
         {programme.prix != null && (
-          <OffreBar prix={programme.prix} prixOriginal={programme.prix_original} fraisInscription={programme.frais_inscription} />
+          <OffreBar prix={programme.prix} prixOriginal={programme.prix_original} fraisInscription={programme.frais_inscription} accent={accent} />
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -164,7 +176,7 @@ export default async function ProgrammePage({
               ))}
             </div>
             <div className="mt-6 flex justify-center">
-              <BoutonReserver />
+              <BoutonReserver accent={accent} />
             </div>
           </div>
         )}
@@ -212,7 +224,7 @@ export default async function ProgrammePage({
                   {it.photo_url ? (
                     <img src={it.photo_url} alt={it.nom} className="w-16 h-16 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-[#1666f0]/20 flex items-center justify-center text-lg font-bold shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-lg font-bold shrink-0">
                       {it.nom.charAt(0)}
                     </div>
                   )}
@@ -246,6 +258,7 @@ export default async function ProgrammePage({
           programmesSimilaires={programmesSimilaires ?? []}
           vacations={vacations ?? []}
           indicatif={programme.indicatif}
+          accent={accent}
         />
 
         {faqs && faqs.length > 0 && (
@@ -266,7 +279,9 @@ export default async function ProgrammePage({
         )}
       </div>
 
-      <SiteFooter />
+      <div className="relative z-10">
+        <SiteFooter />
+      </div>
     </main>
   )
 }

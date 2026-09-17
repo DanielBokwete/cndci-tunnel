@@ -13,12 +13,14 @@ export default function LeadForm({
   programmesSimilaires,
   vacations,
   indicatif,
+  accent,
 }: {
   programmeId: string
   lienInscription: string | null
   programmesSimilaires: Programme[]
   vacations: Vacation[]
   indicatif: string | null
+  accent: string
 }) {
   const [nom, setNom] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -77,8 +79,8 @@ export default function LeadForm({
     return (
       <div id="reservation" className="space-y-8">
         {montrerConfetti && <Confetti />}
-        <div className="border border-green-800 bg-green-950/30 rounded-2xl p-6 text-center">
-          <p className="text-green-400 font-semibold mb-2">
+        <div className="border rounded-2xl p-6 text-center" style={{ borderColor: accent, backgroundColor: `${accent}14` }}>
+          <p className="font-semibold mb-2" style={{ color: accent }}>
             Merci {nom.split(' ')[0]} ! Tes informations ont bien été enregistrées.
           </p>
           <p className="text-gray-400 text-sm mb-4">
@@ -132,8 +134,21 @@ export default function LeadForm({
   const vacationsSecondaires = vacations.filter((v) => v.id !== vacationId)
 
   return (
-    <form id="reservation" onSubmit={handleSubmit} className="border border-gray-800 rounded-2xl p-6 space-y-4">
-      <h3 className="font-bold text-lg">Réserve ta place</h3>
+    <form
+      id="reservation"
+      onSubmit={handleSubmit}
+      className="rounded-2xl p-6 space-y-4 border-2"
+      style={{ borderColor: `${accent}55`, backgroundColor: `${accent}0d` }}
+    >
+      <div>
+        <span
+          className="inline-block text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3"
+          style={{ backgroundColor: accent, color: '#000' }}
+        >
+          Dernières places
+        </span>
+        <h3 className="font-extrabold text-2xl uppercase tracking-tight">Réserve ta place</h3>
+      </div>
       <p className="text-sm text-gray-400">
         Laisse tes coordonnées, on te recontacte pour finaliser ton inscription.
       </p>
@@ -150,13 +165,13 @@ export default function LeadForm({
         placeholder="Nom complet"
         value={nom}
         onChange={(e) => setNom(e.target.value)}
-        className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+        className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40"
       />
 
       <div>
         {indicatif ? (
-          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg overflow-hidden focus-within:border-gray-600">
-            <span className="px-3 py-2 text-gray-400 bg-gray-800/60 border-r border-gray-800 select-none">
+          <div className="flex items-center bg-black/40 border border-white/15 rounded-lg overflow-hidden focus-within:border-white/40">
+            <span className="px-3 py-2 text-gray-400 bg-white/5 border-r border-white/15 select-none">
               +{indicatif}
             </span>
             <input
@@ -175,7 +190,7 @@ export default function LeadForm({
             placeholder="Numéro WhatsApp"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40"
           />
         )}
       </div>
@@ -185,7 +200,7 @@ export default function LeadForm({
         placeholder="Email (optionnel)"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+        className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40"
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -193,7 +208,7 @@ export default function LeadForm({
           required
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
-          className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 text-gray-300"
+          className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40 text-gray-300"
         >
           <option value="">Genre</option>
           <option value="homme">Homme</option>
@@ -208,7 +223,7 @@ export default function LeadForm({
           placeholder="Âge"
           value={age}
           onChange={(e) => setAge(e.target.value)}
-          className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600"
+          className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40"
         />
       </div>
 
@@ -223,7 +238,7 @@ export default function LeadForm({
                 setVacationId(e.target.value)
                 if (e.target.value === vacationSecondaireId) setVacationSecondaireId('')
               }}
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 text-gray-300"
+              className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40 text-gray-300"
             >
               <option value="">Choisis ta vacation</option>
               {vacations.map((v) => (
@@ -239,7 +254,7 @@ export default function LeadForm({
                 required
                 value={vacationSecondaireId}
                 onChange={(e) => setVacationSecondaireId(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 outline-none focus:border-gray-600 text-gray-300"
+                className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2 outline-none focus:border-white/40 text-gray-300"
               >
                 <option value="">Choisis ton deuxième choix</option>
                 {vacationsSecondaires.map((v) => (
@@ -258,7 +273,8 @@ export default function LeadForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-white text-black font-bold text-lg rounded-xl py-3 hover:bg-gray-200 transition disabled:opacity-50"
+        style={{ backgroundColor: accent }}
+        className="w-full text-white font-extrabold text-lg uppercase tracking-wide rounded-xl py-3 transition hover:brightness-90 disabled:opacity-50"
       >
         {loading ? 'Envoi...' : 'Je réserve ma place'}
       </button>

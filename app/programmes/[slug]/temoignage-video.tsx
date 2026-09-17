@@ -7,19 +7,78 @@ function extraireIdYoutube(url: string): string | null {
   return match ? match[1] : null
 }
 
+function estShortYoutube(url: string): boolean {
+  return url.includes('/shorts/')
+}
+
 function extraireIdTiktok(url: string): string | null {
   const match = url.match(/tiktok\.com\/.+\/video\/(\d+)/)
   return match ? match[1] : null
 }
 
+function estInstagram(url: string): boolean {
+  return /instagram\.com\/(p|reel|tv)\//.test(url)
+}
+
+function estVideoNative(url: string): boolean {
+  return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)
+}
+
+declare global {
+  interface Window {
+    instgrm?: { Embeds: { process: () => void } }
+  }
+}
+
+function InstagramEmbed({ url }: { url: string }) {
+  useEffect(() => {
+    function traiter() {
+      window.instgrm?.Embeds.process()
+    }
+    if (window.instgrm) {
+      traiter()
+      return
+    }
+    const scriptExistant = document.getElementById('instagram-embed-script')
+    if (scriptExistant) {
+      scriptExistant.addEventListener('load', traiter)
+      return () => scriptExistant.removeEventListener('load', traiter)
+    }
+    const script = document.createElement('script')
+    script.id = 'instagram-embed-script'
+    script.src = 'https://www.instagram.com/embed.js'
+    script.async = true
+    script.onload = traiter
+    document.body.appendChild(script)
+  }, [url])
+
+  return (
+    <blockquote
+      className="instagram-media"
+      data-instgrm-permalink={url}
+      data-instgrm-version="14"
+      style={{ background: '#000', border: 0, margin: 0, width: '100%' }}
+    />
+  )
+}
+
 export default function TemoignageVideo({ url }: { url: string }) {
-  const idYoutube = extraireIdYoutube(url)
-  const idTiktok = !idYoutube ? extraireIdTiktok(url) : null
-  const embarquable = idYoutube || idTiktok
+  const videoNative = estVideoNative(url)
+  const idYoutube = !videoNative ? extraireIdYoutube(url) : null
+  const idTiktok = !videoNative && !idYoutube ? extraireIdTiktok(url) : null
+  const instagram = !videoNative && !idYoutube && !idTiktok && estInstagram(url)
+  const embarquable = videoNative || idYoutube || idTiktok
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [flottant, setFlottant] = useState(false)
   const [fermee, setFermee] = useState(false)
+  const [ratioNatif, setRatioNatif] = useState<number | null>(null)
+
+  const ratio = videoNative
+    ? ratioNatif ?? 16 / 9
+    : idYoutube
+    ? (estShortYoutube(url) ? 9 / 16 : 16 / 9)
+    : 9 / 16
 
   useEffect(() => {
     if (!embarquable) return
@@ -28,7 +87,6 @@ export default function TemoignageVideo({ url }: { url: string }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Flotte des qu'on quitte la zone (au-dessus ou en dessous), grande quand bien visible
         setFlottant(entry.intersectionRatio < 0.6)
       },
       { threshold: [0, 0.6, 1] }
@@ -36,6 +94,14 @@ export default function TemoignageVideo({ url }: { url: string }) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [embarquable])
+
+  if (instagram) {
+    return (
+      <div className="w-full flex justify-center overflow-hidden rounded-xl border border-white/10">
+        <InstagramEmbed url={url} />
+      </div>
+    )
+  }
 
   if (!embarquable) {
     return (
@@ -45,17 +111,40 @@ export default function TemoignageVideo({ url }: { url: string }) {
     )
   }
 
-  const src = idYoutube ? `https://www.youtube.com/embed/${idYoutube}` : `https://www.tiktok.com/embed/v2/${idTiktok}`
   const actif = flottant && !fermee
 
+  const contenuLecteur = videoNative ? (
+    <video
+      src={url}
+      controls
+      playsInline
+      onLoadedMetadata={(e) => {
+        const v = e.currentTarget
+        if (v.videoWidth && v.videoHeight) {
+          setRatioNatif(v.videoWidth / v.videoHeight)
+        }
+      }}
+      className="w-full h-full object-contain bg-black"
+    />
+  ) : (
+    <iframe
+      src={idYoutube ? `https://www.youtube.com/embed/${idYoutube}` : `https://www.tiktok.com/embed/v2/${idTiktok}`}
+      title="Vidéo"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      className="w-full h-full"
+    />
+  )
+
   return (
-    <div ref={containerRef} className="aspect-video w-full relative">
-      {actif && <div className="aspect-video w-full" />}
+    <div ref={containerRef} className="w-full relative flex justify-center" style={{ aspectRatio: ratio, maxHeight: '75vh' }}>
+      {actif && <div className="w-full h-full" />}
       <div
+        style={actif ? undefined : { aspectRatio: ratio, maxHeight: '75vh', maxWidth: '100%' }}
         className={
           actif
-            ? 'fixed bottom-4 right-4 z-[60] w-56 sm:w-64 aspect-video rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl shadow-black/60 bg-black'
-            : 'aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black'
+            ? 'fixed bottom-4 right-4 z-[60] w-40 sm:w-52 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl shadow-black/60 bg-black'
+            : 'rounded-xl overflow-hidden border border-white/10 bg-black'
         }
       >
         {actif && (
@@ -63,13 +152,7 @@ export default function TemoignageVideo({ url }: { url: string }) {
             ×
           </button>
         )}
-        <iframe
-          src={src}
-          title="Vidéo"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full"
-        />
+        {contenuLecteur}
       </div>
     </div>
   )
