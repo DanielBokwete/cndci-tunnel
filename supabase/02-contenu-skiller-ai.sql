@@ -24,6 +24,8 @@ begin
     date_fin = '2027-01-08',
     prix = 160,
     frais_inscription = 10,
+    lieu = 'Silikin Village · Concession COTEX, N° 63, avenue Colonel Mondjiba, Gombe',
+    ville = 'Kinshasa',
     paiement_tranches = true,
     afficher_certification = true,
     public_cible = E'Entrepreneur\nÉtudiant\nFreelance\nCommunity manager\nPorteur de projet\nSalarié en reconversion',
