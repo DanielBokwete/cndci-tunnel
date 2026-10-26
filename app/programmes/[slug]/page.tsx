@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Unbounded, Manrope, JetBrains_Mono } from 'next/font/google'
@@ -15,6 +16,30 @@ import SkillerLanding from './skiller-landing'
 const skDisplay = Unbounded({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--font-sk-display' })
 const skBody = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-sk-body' })
 const skMono = JetBrains_Mono({ subsets: ['latin'], weight: ['500'], variable: '--font-sk-mono' })
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('programmes')
+    .select('titre, description, image_affiche_url, image_header_url, accroche')
+    .eq('slug', slug)
+    .eq('actif', true)
+    .single()
+  if (!data) return { title: 'CNDCI' }
+  const titre = `${data.titre}${data.accroche ? ` · ${data.accroche}` : ''} | CNDCI`
+  const image = data.image_affiche_url ?? data.image_header_url
+  return {
+    title: titre,
+    description: data.description ?? undefined,
+    openGraph: { title: titre, description: data.description ?? undefined, images: image ? [image] : undefined, type: 'website' },
+    twitter: { card: 'summary_large_image', title: titre, description: data.description ?? undefined, images: image ? [image] : undefined },
+  }
+}
 
 export default async function ProgrammePage({
   params,
