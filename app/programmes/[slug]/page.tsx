@@ -107,6 +107,12 @@ export default async function ProgrammePage({
   const fondPage = estSkiller ? undefined : { backgroundColor: fondCouleur }
 
   if (estSkiller) {
+    const { data: videoProg } = await supabase
+      .from('videos_programme')
+      .select('titre, video_url')
+      .eq('organisation_id', programme.organisation_id)
+      .maybeSingle() as { data: { titre: string; video_url: string | null } | null }
+
     const dateLongue = (d: string | null) =>
       d ? new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Kinshasa' }) : null
     const dateCourte = (d: string | null) =>
@@ -130,6 +136,7 @@ export default async function ProgrammePage({
         videos={videos}
         captures={captures}
         programmesSimilaires={programmesSimilaires ?? []}
+        videoProgramme={videoProg?.video_url ? { titre: videoProg.titre, url: videoProg.video_url } : null}
       />
     )
   }

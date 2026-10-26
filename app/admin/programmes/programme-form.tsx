@@ -557,13 +557,13 @@ export default function ProgrammeForm({
       </div>
 
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Vidéo de présentation (fenêtre du haut de page)</label>
-        <input type="file" accept="video/mp4,video/webm" onChange={(e) => setVideoPresentationFile(e.target.files?.[0] ?? null)} className={styleInputFichier} />
+        <label className="block text-sm text-gray-400 mb-1">Vidéo de la formation (fenêtre du haut de page)</label>
+        <input type="file" accept="video/mp4,video/webm,video/quicktime" onChange={(e) => setVideoPresentationFile(e.target.files?.[0] ?? null)} className={styleInputFichier} />
         {videoPresentationFile && <p className="text-xs text-green-400 mt-1">Fichier sélectionné : {videoPresentationFile.name}</p>}
-        <p className="text-xs text-gray-600 mt-1">MP4 16:9, 20 Mo maximum. Ou colle un lien direct vers un fichier .mp4 :</p>
+        <p className="text-xs text-gray-600 mt-1">MP4 conseillé, vertical, carré ou horizontal, 20 Mo maximum. Ou colle un lien direct vers la vidéo :</p>
         <input type="text" placeholder="https://.../video.mp4" value={form.video_presentation_url} onChange={(e) => setForm({ ...form, video_presentation_url: e.target.value })}
           className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 mt-1 outline-none focus:border-gray-600" />
-        <p className="text-xs text-gray-600 mt-1">Sans vidéo, l&apos;image d&apos;en-tête s&apos;affiche à la place.</p>
+        <p className="text-xs text-gray-600 mt-1">Sans vidéo de formation, c&apos;est la vidéo du programme S&apos;KILLER qui s&apos;affiche en haut.</p>
       </div>
 
       <div className="border border-white/10 rounded-xl p-4 space-y-3">

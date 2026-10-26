@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrganisationCourante } from '@/lib/organisation'
 import type { ProgrammeAvecSecteur } from '@/lib/types'
 import LogoutButton from './logout-button'
+import VideoProgrammeForm from './video-programme-form'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -18,6 +19,12 @@ export default async function AdminPage() {
     .select('*, secteur:secteurs(*)')
     .eq('organisation_id', organisation.id)
     .order('created_at', { ascending: false }) as { data: ProgrammeAvecSecteur[] | null }
+
+  const { data: videoProg } = await supabase
+    .from('videos_programme')
+    .select('titre, video_url')
+    .eq('organisation_id', organisation.id)
+    .maybeSingle() as { data: { titre: string; video_url: string | null } | null }
 
   const joursEssaiRestants = organisation.plan === 'essai'
     ? Math.max(0, Math.ceil((new Date(organisation.essai_fin).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -66,6 +73,12 @@ export default async function AdminPage() {
             Gérer les secteurs
           </Link>
         </div>
+
+        <VideoProgrammeForm
+          organisationId={organisation.id}
+          titreInitial={videoProg?.titre ?? "Découvre le programme S'KILLER"}
+          urlInitiale={videoProg?.video_url ?? null}
+        />
 
         {!programmes || programmes.length === 0 ? (
           <p className="text-gray-500">Aucun programme pour le moment.</p>

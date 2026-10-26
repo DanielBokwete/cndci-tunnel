@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { ProgrammeAvecSecteur, Programme, Vacation, Faq, Temoignage, Intervenant, Competence, Module } from '@/lib/types'
 import LeadForm from './lead-form'
+import VideoAdaptee from './video-adaptee'
 import './skiller.css'
 
 const ICONES = [
@@ -23,6 +24,8 @@ export type InfosAffichage = {
   adresse: string | null
 }
 
+export type VideoProgramme = { titre: string; url: string } | null
+
 export default function SkillerLanding({
   fontClass,
   programme,
@@ -35,6 +38,7 @@ export default function SkillerLanding({
   videos,
   captures,
   programmesSimilaires,
+  videoProgramme,
 }: {
   fontClass: string
   programme: ProgrammeAvecSecteur
@@ -47,13 +51,12 @@ export default function SkillerLanding({
   videos: Temoignage[]
   captures: Temoignage[]
   programmesSimilaires: Programme[]
+  videoProgramme: VideoProgramme
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const winRef = useRef<HTMLDivElement>(null)
   const heroCtaRef = useRef<HTMLDivElement>(null)
   const prixRef = useRef<HTMLSpanElement>(null)
-  const promoRef = useRef<HTMLVideoElement>(null)
-  const [sonActif, setSonActif] = useState(false)
   const [barreVisible, setBarreVisible] = useState(false)
   const [temps, setTemps] = useState<string | null>(null)
 
@@ -61,7 +64,12 @@ export default function SkillerLanding({
   const prixOriginal = programme.prix_original && prix != null && programme.prix_original > prix ? programme.prix_original : null
   const reduction = prixOriginal && prix != null ? Math.round(((prixOriginal - prix) / prixOriginal) * 100) : null
   const frais = programme.frais_inscription
-  const videoPresentation = programme.video_presentation_url
+  // En haut : la vidéo de la formation si elle existe, sinon la vidéo du programme S'KILLER
+  const videoFormation = programme.video_presentation_url
+  const videoHaut = videoFormation || videoProgramme?.url || null
+  const legendeHaut = videoFormation ? `Découvre la formation ${programme.titre}` : videoProgramme?.titre ?? null
+  // La vidéo du programme a sa propre section quand la formation a déjà sa vidéo en haut
+  const sectionProgramme = videoFormation && videoProgramme?.url ? videoProgramme : null
   const nomSecteur = programme.secteur?.nom ?? "S'KILLER"
   // Le logo du haut et du bas affiche toujours la marque du programme, pas la branche (AI, DESK, BRAND...)
   const nomProgramme = "S'KILLER"
@@ -147,8 +155,6 @@ export default function SkillerLanding({
       nettoyages.push(() => mo.disconnect())
     } else setBarreVisible(true)
 
-    if (reduce) promoRef.current?.pause()
-
     return () => nettoyages.forEach((n) => n())
   }, [prix, prixOriginal])
 
@@ -167,16 +173,6 @@ export default function SkillerLanding({
     const id = setInterval(maj, 1000)
     return () => clearInterval(id)
   }, [prixOriginal])
-
-  function basculerSon() {
-    const v = promoRef.current
-    if (!v) return
-    const activer = v.muted
-    if (activer) v.currentTime = 0
-    v.muted = !activer
-    v.play().catch(() => {})
-    setSonActif(activer)
-  }
 
   function allerReservation(e: React.MouseEvent) {
     e.preventDefault()
@@ -234,23 +230,26 @@ export default function SkillerLanding({
           </div>
 
           <div className="stage">
-            <div className="window" ref={winRef}>
-              <div className="bar-top" aria-hidden="true"><i /><i /><i /><span>cndci.org · {nomProgramme.toLowerCase()}</span></div>
-              <div className="promo">
-                {videoPresentation ? (
-                  <>
-                    <video ref={promoRef} autoPlay muted loop playsInline preload="auto" poster={programme.image_header_url ?? undefined} src={videoPresentation} />
-                    <button className="chip-btn" type="button" aria-pressed={sonActif} onClick={basculerSon}>
-                      {sonActif ? '🔊 Son activé' : '🔇 Activer le son'}
-                    </button>
-                  </>
-                ) : programme.image_header_url ? (
-                  <img src={programme.image_header_url} alt={programme.titre} />
-                ) : (
-                  <div className="fallback"><span className="hl" style={{ background: 'var(--grad)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{nomSecteur}</span></div>
-                )}
+            {legendeHaut && videoHaut && <p className="label" style={{ textAlign: 'center', marginBottom: 14 }}>{legendeHaut}</p>}
+            {videoHaut ? (
+              <VideoAdaptee
+                src={videoHaut}
+                poster={videoFormation ? programme.image_header_url : null}
+                barre={`cndci.org · ${nomProgramme.toLowerCase()}`}
+                fenetreRef={winRef}
+              />
+            ) : (
+              <div className="window" ref={winRef}>
+                <div className="bar-top" aria-hidden="true"><i /><i /><i /><span>cndci.org · {nomProgramme.toLowerCase()}</span></div>
+                <div className="promo">
+                  {programme.image_header_url ? (
+                    <img src={programme.image_header_url} alt={programme.titre} />
+                  ) : (
+                    <div className="fallback"><span style={{ background: 'var(--grad)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{nomSecteur}</span></div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {facts.length > 0 && (
@@ -278,6 +277,19 @@ export default function SkillerLanding({
                   {c.description && <p>{c.description}</p>}
                 </article>
               ))}
+            </div>
+          </section>
+        )}
+
+        {sectionProgramme && (
+          <section className="wrap">
+            <div className="head" style={{ alignItems: 'center', textAlign: 'center' }}>
+              <p className="label rv">Le programme {nomProgramme}</p>
+              <h2 className="h2 rv d1">{sectionProgramme.titre}</h2>
+              <p className="sub rv d2">Toutes les formations {nomProgramme} du CNDCI : un même esprit, 100 % pratique, pour devenir redoutable dans ce que tu fais.</p>
+            </div>
+            <div className="rv">
+              <VideoAdaptee src={sectionProgramme.url} barre={`cndci.org · ${nomProgramme.toLowerCase()}`} incline={false} />
             </div>
           </section>
         )}
