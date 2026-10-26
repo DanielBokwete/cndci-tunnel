@@ -63,6 +63,8 @@ export default function SkillerLanding({
   const frais = programme.frais_inscription
   const videoPresentation = programme.video_presentation_url
   const nomSecteur = programme.secteur?.nom ?? "S'KILLER"
+  // Le logo du haut et du bas affiche toujours la marque du programme, pas la branche (AI, DESK, BRAND...)
+  const nomProgramme = "S'KILLER"
 
   const mots = programme.titre.trim().split(' ')
   const dernierMot = mots.length > 1 ? mots.pop() : null
@@ -201,7 +203,7 @@ export default function SkillerLanding({
         <div className="nav-in">
           <a className="brand" href="#top">
             <img src="/logo-cndci.png" alt="" width={30} height={30} />
-            CNDCI · <span>{nomSecteur}</span>
+            CNDCI · <span>{nomProgramme}</span>
           </a>
           <div className="links">
             <Link href="/">Formations</Link>
@@ -233,7 +235,7 @@ export default function SkillerLanding({
 
           <div className="stage">
             <div className="window" ref={winRef}>
-              <div className="bar-top" aria-hidden="true"><i /><i /><i /><span>cndci.org · {nomSecteur.toLowerCase()}</span></div>
+              <div className="bar-top" aria-hidden="true"><i /><i /><i /><span>cndci.org · {nomProgramme.toLowerCase()}</span></div>
               <div className="promo">
                 {videoPresentation ? (
                   <>
@@ -476,7 +478,7 @@ export default function SkillerLanding({
         )}
 
         <section className="wrap final">
-          <h2 className="h2 rv">Prêt à devenir <em>{nomSecteur}</em> ?</h2>
+          <h2 className="h2 rv">Prêt à devenir <em>un {nomProgramme}</em> ?</h2>
           <p className="sub rv d1" style={{ textAlign: 'center' }}>
             {infos.debut ? `La cohorte démarre le ${infos.debut}. ` : ''}Les places sont limitées.
           </p>
@@ -486,7 +488,7 @@ export default function SkillerLanding({
 
       <footer>
         <div className="wrap">
-          <a className="brand" href="#top"><img src="/logo-cndci.png" alt="" width={30} height={30} />CNDCI · <span>{nomSecteur}</span></a>
+          <a className="brand" href="#top"><img src="/logo-cndci.png" alt="" width={30} height={30} />CNDCI · <span>{nomProgramme}</span></a>
           <Link href="/" style={{ textDecoration: 'none' }}>Tous nos programmes →</Link>
           <span>© {new Date().getFullYear()} CNDCI · Groupe ELAKO</span>
         </div>
