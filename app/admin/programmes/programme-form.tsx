@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Secteur, Programme, Vacation, Faq, Temoignage, Intervenant } from '@/lib/types'
+import type { Secteur, Programme, Vacation, Faq, Temoignage, Intervenant, Competence, Module } from '@/lib/types'
 import { PAYS_FRANCOPHONES } from '@/lib/pays-francophones'
 
 const styleInputFichier =
@@ -12,6 +12,8 @@ const styleInputFichier =
 type VacationForm = { id?: string; nom: string; heure_debut: string; heure_fin: string }
 type FaqForm = { id?: string; question: string; reponse: string }
 type TemoignageForm = { id?: string; type: 'image' | 'video'; url: string; nom: string; file?: File; preview?: string }
+type CompetenceForm = { id?: string; titre: string; description: string }
+type ModuleForm = { id?: string; titre: string; sous_titre: string; points: string }
 type IntervenantForm = { id?: string; nom: string; bio: string; photo_url?: string; file?: File; preview?: string }
 
 function extraireMessageErreur(err: unknown): string {
@@ -38,6 +40,8 @@ export default function ProgrammeForm({
   faqsInitiales,
   temoignagesInitiaux,
   intervenantsInitiaux,
+  competencesInitiales,
+  modulesInitiaux,
 }: {
   secteurs: Secteur[]
   programme?: Programme
@@ -46,6 +50,8 @@ export default function ProgrammeForm({
   faqsInitiales?: Faq[]
   temoignagesInitiaux?: Temoignage[]
   intervenantsInitiaux?: Intervenant[]
+  competencesInitiales?: Competence[]
+  modulesInitiaux?: Module[]
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -72,6 +78,14 @@ export default function ProgrammeForm({
     intervenantsInitiaux?.map((i) => ({ id: i.id, nom: i.nom, bio: i.bio ?? '', photo_url: i.photo_url ?? undefined, preview: i.photo_url ?? undefined })) ?? []
   )
 
+  const [competences, setCompetences] = useState<CompetenceForm[]>(
+    competencesInitiales?.map((c) => ({ id: c.id, titre: c.titre, description: c.description ?? '' })) ?? []
+  )
+  const [modules, setModules] = useState<ModuleForm[]>(
+    modulesInitiaux?.map((m) => ({ id: m.id, titre: m.titre, sous_titre: m.sous_titre ?? '', points: m.points ?? '' })) ?? []
+  )
+  const [videoPresentationFile, setVideoPresentationFile] = useState<File | null>(null)
+
   const [form, setForm] = useState({
     titre: programme?.titre ?? '',
     slug: programme?.slug ?? '',
@@ -93,6 +107,11 @@ export default function ProgrammeForm({
     prix_original: programme?.prix_original?.toString() ?? '',
     frais_inscription: programme?.frais_inscription?.toString() ?? '',
     lien_inscription: programme?.lien_inscription ?? '',
+    accroche: programme?.accroche ?? '',
+    video_presentation_url: programme?.video_presentation_url ?? '',
+    duree: programme?.duree ?? '',
+    rythme: programme?.rythme ?? '',
+    paiement_tranches: programme?.paiement_tranches ?? false,
     actif: programme?.actif ?? true,
   })
 
@@ -126,6 +145,25 @@ export default function ProgrammeForm({
   function retirerFaq(i: number) { setFaqs(faqs.filter((_, idx) => idx !== i)) }
   function modifierFaq(i: number, champ: 'question' | 'reponse', v: string) {
     setFaqs(faqs.map((f, idx) => (idx === i ? { ...f, [champ]: v } : f)))
+  }
+
+  function ajouterCompetence() { setCompetences([...competences, { titre: '', description: '' }]) }
+  function retirerCompetence(i: number) { setCompetences(competences.filter((_, idx) => idx !== i)) }
+  function modifierCompetence(i: number, champ: 'titre' | 'description', v: string) {
+    setCompetences(competences.map((c, idx) => (idx === i ? { ...c, [champ]: v } : c)))
+  }
+
+  function ajouterModule() { setModules([...modules, { titre: '', sous_titre: '', points: '' }]) }
+  function retirerModule(i: number) { setModules(modules.filter((_, idx) => idx !== i)) }
+  function modifierModule(i: number, champ: 'titre' | 'sous_titre' | 'points', v: string) {
+    setModules(modules.map((m, idx) => (idx === i ? { ...m, [champ]: v } : m)))
+  }
+  function deplacerModule(i: number, sens: -1 | 1) {
+    const j = i + sens
+    if (j < 0 || j >= modules.length) return
+    const copie = [...modules]
+    ;[copie[i], copie[j]] = [copie[j], copie[i]]
+    setModules(copie)
   }
 
   function ajouterTemoignage() { setTemoignages([...temoignages, { type: 'image', url: '', nom: '' }]) }
@@ -179,6 +217,8 @@ export default function ProgrammeForm({
       if (imageHeaderFile) image_header_url = await uploadImage(imageHeaderFile)
       if (imageCardFile) image_card_url = await uploadImage(imageCardFile)
       if (imageAfficheFile) image_affiche_url = await uploadImage(imageAfficheFile)
+      let video_presentation_url = form.video_presentation_url || null
+      if (videoPresentationFile) video_presentation_url = await uploadImage(videoPresentationFile)
 
       const paysChoisi = PAYS_FRANCOPHONES.find((p) => p.nom === form.pays)
 
@@ -205,6 +245,11 @@ export default function ProgrammeForm({
         prix_original: form.prix_original ? parseFloat(form.prix_original) : null,
         frais_inscription: form.frais_inscription ? parseFloat(form.frais_inscription) : null,
         lien_inscription: form.lien_inscription || null,
+        accroche: form.accroche || null,
+        video_presentation_url,
+        duree: form.duree || null,
+        rythme: form.rythme || null,
+        paiement_tranches: form.paiement_tranches,
         actif: form.actif,
         image_header_url,
         image_card_url,
@@ -242,6 +287,24 @@ export default function ProgrammeForm({
             faqsValides.map((f, i) => ({ programme_id: programmeId, question: f.question, reponse: f.reponse, ordre: i }))
           )
           if (fErr) throw fErr
+        }
+
+        await supabase.from('competences').delete().eq('programme_id', programmeId)
+        const competencesValides = competences.filter((c) => c.titre)
+        if (competencesValides.length > 0) {
+          const { error: cErr } = await supabase.from('competences').insert(
+            competencesValides.map((c, i) => ({ programme_id: programmeId, titre: c.titre, description: c.description || null, ordre: i }))
+          )
+          if (cErr) throw cErr
+        }
+
+        await supabase.from('modules').delete().eq('programme_id', programmeId)
+        const modulesValides = modules.filter((m) => m.titre)
+        if (modulesValides.length > 0) {
+          const { error: mErr } = await supabase.from('modules').insert(
+            modulesValides.map((m, i) => ({ programme_id: programmeId, titre: m.titre, sous_titre: m.sous_titre || null, points: m.points || null, ordre: i }))
+          )
+          if (mErr) throw mErr
         }
 
         await supabase.from('temoignages').delete().eq('programme_id', programmeId)
@@ -327,6 +390,12 @@ export default function ProgrammeForm({
       </div>
 
       <div>
+        <label className="block text-sm text-gray-400 mb-1">Accroche (pilule en haut de page)</label>
+        <input type="text" placeholder="ex: Cohorte 1 · Places limitées" value={form.accroche} onChange={(e) => setForm({ ...form, accroche: e.target.value })}
+          className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+      </div>
+
+      <div>
         <label className="block text-sm text-gray-400 mb-1">Contenu détaillé du programme</label>
         <textarea value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })} rows={5}
           className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
@@ -358,6 +427,19 @@ export default function ProgrammeForm({
         <div>
           <label className="block text-sm text-gray-400 mb-1">Date de fin</label>
           <input type="date" value={form.date_fin} onChange={(e) => setForm({ ...form, date_fin: e.target.value })}
+            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Durée</label>
+          <input type="text" placeholder="ex: 8 semaines" value={form.duree} onChange={(e) => setForm({ ...form, duree: e.target.value })}
+            className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Rythme</label>
+          <input type="text" placeholder="ex: Lun · Mer · Ven" value={form.rythme} onChange={(e) => setForm({ ...form, rythme: e.target.value })}
             className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
         </div>
       </div>
@@ -445,6 +527,11 @@ export default function ProgrammeForm({
           className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
       </div>
 
+      <label className="flex items-center gap-2 text-sm text-gray-400">
+        <input type="checkbox" checked={form.paiement_tranches} onChange={(e) => setForm({ ...form, paiement_tranches: e.target.checked })} />
+        Paiement par tranches accepté
+      </label>
+
       <div>
         <label className="block text-sm text-gray-400 mb-1">Lien d&apos;inscription</label>
         <input type="text" placeholder="ex: https://wa.me/243xxxxxxxxx" value={form.lien_inscription} onChange={(e) => setForm({ ...form, lien_inscription: e.target.value })}
@@ -467,6 +554,59 @@ export default function ProgrammeForm({
         <label className="block text-sm text-gray-400 mb-1">Affiche / Flyer</label>
         {previewAffiche && <img src={previewAffiche} alt="" className="w-full h-48 object-cover rounded-lg mb-2 border border-white/10" />}
         <input type="file" accept="image/*" onChange={handleAfficheChange} className={styleInputFichier} />
+      </div>
+
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Vidéo de présentation (fenêtre du haut de page)</label>
+        <input type="file" accept="video/mp4,video/webm" onChange={(e) => setVideoPresentationFile(e.target.files?.[0] ?? null)} className={styleInputFichier} />
+        {videoPresentationFile && <p className="text-xs text-green-400 mt-1">Fichier sélectionné : {videoPresentationFile.name}</p>}
+        <p className="text-xs text-gray-600 mt-1">MP4 16:9, 20 Mo maximum. Ou colle un lien direct vers un fichier .mp4 :</p>
+        <input type="text" placeholder="https://.../video.mp4" value={form.video_presentation_url} onChange={(e) => setForm({ ...form, video_presentation_url: e.target.value })}
+          className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 mt-1 outline-none focus:border-gray-600" />
+        <p className="text-xs text-gray-600 mt-1">Sans vidéo, l&apos;image d&apos;en-tête s&apos;affiche à la place.</p>
+      </div>
+
+      <div className="border border-white/10 rounded-xl p-4 space-y-3">
+        <div>
+          <label className="block text-sm font-semibold text-gray-300 mb-1">Compétences</label>
+          <p className="text-xs text-gray-600">Les cartes « Ce que tu sauras faire » (6 idéalement).</p>
+        </div>
+        {competences.map((c, i) => (
+          <div key={i} className="border border-white/10 rounded-lg p-3 space-y-2">
+            <input type="text" placeholder="Titre (ex: Automatiser tes tâches)" value={c.titre} onChange={(e) => modifierCompetence(i, 'titre', e.target.value)}
+              className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+            <textarea placeholder="Une phrase d'explication" value={c.description} onChange={(e) => modifierCompetence(i, 'description', e.target.value)} rows={2}
+              className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+            <button type="button" onClick={() => retirerCompetence(i)} className="text-red-500 hover:text-red-400 text-sm">Retirer cette compétence</button>
+          </div>
+        ))}
+        <button type="button" onClick={ajouterCompetence} className="text-sm border border-white/20 rounded-lg px-3 py-1.5 hover:bg-white/10 transition">+ Ajouter une compétence</button>
+      </div>
+
+      <div className="border border-white/10 rounded-xl p-4 space-y-3">
+        <div>
+          <label className="block text-sm font-semibold text-gray-300 mb-1">Modules du programme</label>
+          <p className="text-xs text-gray-600">L&apos;accordéon « Le programme ». Un point par ligne dans le contenu.</p>
+        </div>
+        {modules.map((m, i) => (
+          <div key={i} className="border border-white/10 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500 font-semibold">Module {i + 1}</span>
+              <div className="flex gap-1">
+                <button type="button" onClick={() => deplacerModule(i, -1)} className="text-xs border border-white/20 rounded px-2 py-1 hover:bg-white/10">↑</button>
+                <button type="button" onClick={() => deplacerModule(i, 1)} className="text-xs border border-white/20 rounded px-2 py-1 hover:bg-white/10">↓</button>
+              </div>
+            </div>
+            <input type="text" placeholder="Titre (ex: Le Prompt Engineering)" value={m.titre} onChange={(e) => modifierModule(i, 'titre', e.target.value)}
+              className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+            <input type="text" placeholder="Sous-titre (optionnel)" value={m.sous_titre} onChange={(e) => modifierModule(i, 'sous_titre', e.target.value)}
+              className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+            <textarea placeholder={'Point 1\nPoint 2\nPoint 3'} value={m.points} onChange={(e) => modifierModule(i, 'points', e.target.value)} rows={4}
+              className="w-full bg-gray-900 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-gray-600" />
+            <button type="button" onClick={() => retirerModule(i)} className="text-red-500 hover:text-red-400 text-sm">Retirer ce module</button>
+          </div>
+        ))}
+        <button type="button" onClick={ajouterModule} className="text-sm border border-white/20 rounded-lg px-3 py-1.5 hover:bg-white/10 transition">+ Ajouter un module</button>
       </div>
 
       <div className="border border-white/10 rounded-xl p-4 space-y-3">

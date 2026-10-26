@@ -46,6 +46,11 @@ export type Programme = {
   afficher_certification: boolean
   public_cible: string | null
   titre_video: string | null
+  accroche: string | null
+  video_presentation_url: string | null
+  duree: string | null
+  rythme: string | null
+  paiement_tranches: boolean
   promo_start_at: string
   actif: boolean
   created_at: string
@@ -106,5 +111,24 @@ export type Prospect = {
   genre: 'homme' | 'femme' | null
   age: number | null
   confirme: boolean
+  created_at: string
+}
+
+export type Competence = {
+  id: string
+  programme_id: string
+  titre: string
+  description: string | null
+  ordre: number
+  created_at: string
+}
+
+export type Module = {
+  id: string
+  programme_id: string
+  titre: string
+  sous_titre: string | null
+  points: string | null
+  ordre: number
   created_at: string
 }

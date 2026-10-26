@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { ProgrammeAvecSecteur, Programme, Vacation, Faq, Temoignage, Intervenant } from '@/lib/types'
+import { Unbounded, Manrope, JetBrains_Mono } from 'next/font/google'
+import type { ProgrammeAvecSecteur, Programme, Vacation, Faq, Temoignage, Intervenant, Competence, Module } from '@/lib/types'
 import OffreBar from './offre-bar'
 import LeadForm from './lead-form'
 import TemoignageVideo from './temoignage-video'
@@ -9,6 +10,11 @@ import BoutonReserver from './bouton-reserver'
 import FondAnime from './fond-anime'
 import MinimalHeader from '../../_components/minimal-header'
 import SiteFooter from '../../_components/site-footer'
+import SkillerLanding from './skiller-landing'
+
+const skDisplay = Unbounded({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--font-sk-display' })
+const skBody = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-sk-body' })
+const skMono = JetBrains_Mono({ subsets: ['latin'], weight: ['500'], variable: '--font-sk-mono' })
 
 export default async function ProgrammePage({
   params,
@@ -46,6 +52,11 @@ export default async function ProgrammePage({
   const { data: intervenants } = await supabase
     .from('intervenants').select('*').eq('programme_id', programme.id).order('ordre') as { data: Intervenant[] | null }
 
+  const { data: competences } = await supabase
+    .from('competences').select('*').eq('programme_id', programme.id).order('ordre') as { data: Competence[] | null }
+  const { data: modules } = await supabase
+    .from('modules').select('*').eq('programme_id', programme.id).order('ordre') as { data: Module[] | null }
+
   const videos = (temoignagesBruts ?? []).filter((t) => t.type === 'video')
   const captures = (temoignagesBruts ?? []).filter((t) => t.type === 'image')
 
@@ -69,6 +80,34 @@ export default async function ProgrammePage({
   const estSkiller = (programme.secteur?.nom ?? '').toUpperCase().includes('KILLER')
   const fondCouleur = estSkiller ? '#050608' : '#070c18'
   const fondPage = estSkiller ? undefined : { backgroundColor: fondCouleur }
+
+  if (estSkiller) {
+    const dateLongue = (d: string | null) =>
+      d ? new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Kinshasa' }) : null
+    const dateCourte = (d: string | null) =>
+      d ? new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Africa/Kinshasa' }) : null
+    return (
+      <SkillerLanding
+        fontClass={`${skDisplay.variable} ${skBody.variable} ${skMono.variable}`}
+        programme={programme}
+        infos={{
+          debut: dateLongue(programme.date_debut),
+          debutCourt: dateCourte(programme.date_debut),
+          fin: dateLongue(programme.date_fin),
+          lieu: programme.lieu || lieuAffiche || null,
+          adresse: [programme.lieu, lieuAffiche].filter(Boolean).join(', ') || null,
+        }}
+        vacations={vacations ?? []}
+        faqs={faqs ?? []}
+        competences={competences ?? []}
+        modules={modules ?? []}
+        intervenants={intervenants ?? []}
+        videos={videos}
+        captures={captures}
+        programmesSimilaires={programmesSimilaires ?? []}
+      />
+    )
+  }
 
   const reduction =
     programme.prix != null && programme.prix_original && programme.prix_original > programme.prix

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Secteur, Programme, Vacation, Faq, Temoignage, Intervenant } from '@/lib/types'
+import type { Secteur, Programme, Vacation, Faq, Temoignage, Intervenant, Competence, Module } from '@/lib/types'
 import ProgrammeForm from '../programme-form'
 import DeleteButton from './delete-button'
 
@@ -37,6 +37,10 @@ export default async function EditerProgrammePage({
     .from('temoignages').select('*').eq('programme_id', id).order('ordre') as { data: Temoignage[] | null }
   const { data: intervenants } = await supabase
     .from('intervenants').select('*').eq('programme_id', id).order('ordre') as { data: Intervenant[] | null }
+  const { data: competences } = await supabase
+    .from('competences').select('*').eq('programme_id', id).order('ordre') as { data: Competence[] | null }
+  const { data: modules } = await supabase
+    .from('modules').select('*').eq('programme_id', id).order('ordre') as { data: Module[] | null }
 
   return (
     <main className="min-h-screen bg-[#070c18] text-white px-6 py-10">
@@ -61,6 +65,8 @@ export default async function EditerProgrammePage({
           faqsInitiales={faqs ?? []}
           temoignagesInitiaux={temoignages ?? []}
           intervenantsInitiaux={intervenants ?? []}
+          competencesInitiales={competences ?? []}
+          modulesInitiaux={modules ?? []}
         />
       </div>
     </main>
